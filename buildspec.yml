@@ -1,0 +1,43 @@
+version: 0.2
+
+env:
+  variables:
+    ADMIN_APP_NAME: klook-admin-demo
+    # 定义镜像名字
+    AWS_DEFAULT_REGION: "ap-southeast-1"
+    # DOCKER_IMAGE: "klook-localization-node-server/node"
+    # 新增nginx镜像名字
+    # NGINX_DOCKER_IMAGE: "klook-localization-node-server/nginx"
+    # @Orvice 在 codebuild 里面做下面两行的配置
+    # parameter-store:
+
+    ## index.html 缓存处理
+    # All index.html file inside klook-admin-projects folder in S3 bucket will be missed for cdn
+    # so that the only copy from s3 will be targeted 
+    S3_BUCKET: "klook-staticfile/dist_web/klook-admin-projects"
+
+phases:
+  install:
+    runtime-versions:
+      docker: 18
+      nodejs: 10
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - $(aws ecr get-login --no-include-email --region $AWS_DEFAULT_REGION)
+      - export BUILD_TIME=`date +%FT%T%z`
+  build:
+    commands:
+      - export AWS_ACCOUNT_ID=$(echo $CODEBUILD_BUILD_ARN | grep -oP '\d{12}')
+      - echo $CODEBUILD_BUILD_ARN $AWS_ACCOUNT_ID
+      - echo $CODEBUILD_WEBHOOK_TRIGGER $BUILD_TIME
+      - npm install
+      # if need build admin
+      - npm run build:prod:admin
+      - aws s3 cp dist s3://$S3_BUCKET/$ADMIN_APP_NAME/dist --recursive
+      # if need build merchant
+      # - npm run build:prod:merchant
+      # - aws s3 cp dist s3://$S3_BUCKET/merchant_projects/$ADMIN_APP_NAME/dist --recursive
+  post_build:
+    commands:
+      - echo Build completed on `date`
