@@ -6,9 +6,14 @@
 </template>
 
 <script>
+import api from '@/modules/demo/api/demo'
 export default {
-  name: 'Home'
-  // Write your vue
+  name: 'Home',
+  created() {
+    api.getList().then((res) => {
+      console.log(res)
+    })
+  }
 }
 </script>
 

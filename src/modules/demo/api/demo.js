@@ -8,7 +8,7 @@ export function getList(params) {
   return request({
     url: API.getList,
     params,
-    method: 'get'
+    method: 'post'
   })
     .then((res) => {
       return res
